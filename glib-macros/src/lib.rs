@@ -5,13 +5,14 @@ mod downgrade_derive;
 mod gboxed_derive;
 mod genum_derive;
 mod gflags_attribute;
+mod object_impl_attribute;
 mod object_interface_attribute;
 mod object_subclass_attribute;
 mod utils;
 
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
-use syn::{parse_macro_input, DeriveInput, LitStr};
+use syn::{AttributeArgs, DeriveInput, LitStr, parse_macro_input};
 
 /// Macro for passing variables as strong or weak references into a closure.
 ///
@@ -439,4 +440,15 @@ pub fn object_interface(_attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn downgrade(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     downgrade_derive::impl_downgrade(input)
+}
+
+#[proc_macro_attribute]
+#[proc_macro_error]
+pub fn object_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
+    use proc_macro_error::abort_call_site;
+    let args = parse_macro_input!(attr as AttributeArgs);
+    match syn::parse::<syn::ItemImpl>(item) {
+        Ok(input) => object_impl_attribute::impl_object_ffi(&input, &args).into(),
+        Err(_) => abort_call_site!(object_impl_attribute::WRONG_PLACE_MSG),
+    }
 }
