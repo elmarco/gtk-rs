@@ -1,11 +1,49 @@
 // Take a look at the license at the top of the repository in the LICENSE file.
 
-use crate::FileInfo;
+use crate::{FileAttributeType, FileInfo};
 use glib::translate::*;
 use std::mem;
 use std::time::{Duration, SystemTime};
 
+pub trait ToFileAttributeType {
+    const TYPE: FileAttributeType;
+}
+
+impl ToFileAttributeType for bool {
+    const TYPE: FileAttributeType = FileAttributeType::Boolean;
+}
+
+impl ToFileAttributeType for u32 {
+    const TYPE: FileAttributeType = FileAttributeType::Uint32;
+}
+
+impl ToFileAttributeType for str {
+    const TYPE: FileAttributeType = FileAttributeType::String;
+}
+
 impl FileInfo {
+    #[doc(alias = "g_file_info_set_attribute")]
+    pub fn set_attribute<
+        'a,
+        T: ToFileAttributeType
+            + GlibPtrDefault
+            + ToGlibPtr<'a, <T as GlibPtrDefault>::GlibType>
+            + ?Sized,
+    >(
+        &self,
+        attribute: &str,
+        value: &'a T,
+    ) {
+        unsafe {
+            ffi::g_file_info_set_attribute(
+                self.to_glib_none().0,
+                attribute.to_glib_none().0,
+                <T as ToFileAttributeType>::TYPE.to_glib(),
+                value.to_glib_none().0.to(),
+            );
+        }
+    }
+
     #[cfg_attr(feature = "v2_62", deprecated)]
     #[doc(alias = "g_file_info_get_modification_time")]
     pub fn get_modification_time(&self) -> SystemTime {
@@ -41,5 +79,16 @@ impl FileInfo {
                 }),
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn set_attribute() {
+        let info = FileInfo::new();
+        info.set_attribute("foobar", &true);
     }
 }

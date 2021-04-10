@@ -590,6 +590,10 @@ status = "generate"
     name = "set_modification_time"
     # use SystemTime
     manual = true
+    [[object.function]]
+    name = "set_attribute"
+    # use some generic pointer value
+    manual = true
 
 [[object]]
 name = "Gio.FilterOutputStream"
